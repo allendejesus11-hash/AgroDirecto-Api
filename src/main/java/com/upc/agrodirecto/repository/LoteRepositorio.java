@@ -10,6 +10,9 @@ import java.util.Optional;
 import java.time.LocalDateTime;
 
 public interface LoteRepositorio extends JpaRepository<Lote, Integer> {
+    @Query("SELECT DISTINCT l FROM Lote l LEFT JOIN FETCH l.cargas WHERE l.idLote IN (SELECT c.lote.idLote FROM Carga c WHERE c.productor.idUsuario = :idProductor AND c.lote IS NOT NULL) ORDER BY l.fechaCreacion DESC")
+    List<Lote> listarConsolidacionesPorProductor(@Param("idProductor") Integer idProductor);
+
 
 	@Query("SELECT l FROM Lote l WHERE l.transportista.idUsuario = :idTransportista " +
 			"AND (:filtro IS NULL " +
@@ -42,9 +45,13 @@ public interface LoteRepositorio extends JpaRepository<Lote, Integer> {
 	List<Lote> listarTransaccionesPorPeriodo(@Param("inicio") LocalDateTime inicio,
 			@Param("fin") LocalDateTime fin, @Param("estadoPago") String estadoPago);
 
-	@Query("SELECT COALESCE(SUM(l.fleteTotal), 0.0), COALESCE(SUM(l.montoComision), 0.0) " +
+	@Query("SELECT COALESCE(SUM(l.fleteTotal), 0.0) " +
 			"FROM Lote l WHERE l.estadoPago IS NOT NULL AND l.fechaTransaccion >= :inicio AND l.fechaTransaccion < :fin")
-	Object[] resumirTransaccionesPorPeriodo(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+	Double sumarFletesPorPeriodo(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+	@Query("SELECT COALESCE(SUM(l.montoComision), 0.0) " +
+			"FROM Lote l WHERE l.estadoPago IS NOT NULL AND l.fechaTransaccion >= :inicio AND l.fechaTransaccion < :fin")
+	Double sumarComisionesPorPeriodo(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
 	@Query("SELECT DISTINCT l FROM Lote l JOIN l.cargas c " +
 			"WHERE c.productor.idUsuario = :idProductor AND l.estadoLote = 'entregado' " +

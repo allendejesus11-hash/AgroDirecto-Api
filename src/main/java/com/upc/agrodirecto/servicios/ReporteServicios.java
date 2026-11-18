@@ -37,10 +37,12 @@ public class ReporteServicios {
 
     public Map<String, Object> resumenTransacciones(String mes) {
         YearMonth periodo = parseMes(mes);
-        Object[] resultado = loteRepositorio.resumirTransaccionesPorPeriodo(
-                periodo.atDay(1).atStartOfDay(), periodo.plusMonths(1).atDay(1).atStartOfDay());
-        double total = resultado == null || resultado[0] == null ? 0.0 : ((Number) resultado[0]).doubleValue();
-        double comision = resultado == null || resultado[1] == null ? 0.0 : ((Number) resultado[1]).doubleValue();
+        LocalDateTime inicio = periodo.atDay(1).atStartOfDay();
+        LocalDateTime fin = periodo.plusMonths(1).atDay(1).atStartOfDay();
+        Double totalCalculado = loteRepositorio.sumarFletesPorPeriodo(inicio, fin);
+        Double comisionCalculada = loteRepositorio.sumarComisionesPorPeriodo(inicio, fin);
+        double total = totalCalculado == null ? 0.0 : totalCalculado;
+        double comision = comisionCalculada == null ? 0.0 : comisionCalculada;
         return Map.of("mes", periodo.toString(), "totalTransado", total, "comisionAcumulada", comision);
     }
 

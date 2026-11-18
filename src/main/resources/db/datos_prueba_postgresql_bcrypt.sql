@@ -181,6 +181,16 @@ INSERT INTO gasto_viaje (id_lote, concepto, monto) VALUES
     (3, 'Combustible',      180.00);
 
 
+-- Hibernate ddl-auto=update no define los DEFAULT del script manual de esquema.
+-- Completamos fechas de auditoria para que las pantallas no reciban null.
+UPDATE usuario        SET fecha_registro     = CURRENT_TIMESTAMP WHERE fecha_registro IS NULL;
+UPDATE lote           SET fecha_creacion     = CURRENT_TIMESTAMP WHERE fecha_creacion IS NULL;
+UPDATE carga          SET fecha_publicacion  = CURRENT_TIMESTAMP WHERE fecha_publicacion IS NULL;
+UPDATE solicitud_chat SET fecha_solicitud    = CURRENT_TIMESTAMP WHERE fecha_solicitud IS NULL;
+UPDATE calificacion   SET fecha_calificacion = CURRENT_TIMESTAMP WHERE fecha_calificacion IS NULL;
+UPDATE notificacion   SET fecha_creacion     = CURRENT_TIMESTAMP WHERE fecha_creacion IS NULL;
+UPDATE gasto_viaje    SET fecha_hora         = CURRENT_TIMESTAMP WHERE fecha_hora IS NULL;
+
 -- Verificacion rapida: cuantas filas quedaron por tabla
 SELECT 'rol' AS tabla, COUNT(*) FROM rol
 UNION ALL SELECT 'cultivo', COUNT(*) FROM cultivo

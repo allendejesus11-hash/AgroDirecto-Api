@@ -6,6 +6,8 @@ import com.upc.agrodirecto.servicios.LoteServicios;
 import com.upc.agrodirecto.servicios.UsuarioServicios;
 import com.upc.agrodirecto.servicios.ReporteServicios;
 import com.upc.agrodirecto.security.service.AuthenticatedUserService;
+import com.upc.agrodirecto.repository.CargaRepositorio;
+import com.upc.agrodirecto.repository.LoteRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +17,21 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1")
 public class UsuarioController {
+    @Autowired private CargaRepositorio cargaRepositorio;
+    @Autowired private LoteRepositorio loteRepositorio;
+
+    @GetMapping("/productores/{idProductor}/cargas")
+    public Object cargasDeProductor(@PathVariable Integer idProductor) {
+        verificarPropietario(idProductor);
+        return cargaRepositorio.listarCargasPorProductor(idProductor);
+    }
+
+    @GetMapping("/productores/{idProductor}/lotes-consolidacion")
+    public Object lotesConsolidados(@PathVariable Integer idProductor) {
+        verificarPropietario(idProductor);
+        return loteRepositorio.listarConsolidacionesPorProductor(idProductor);
+    }
+
 	@Autowired
 	private UsuarioServicios usuarioServicios;
 	@Autowired

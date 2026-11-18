@@ -21,6 +21,9 @@ public interface CargaRepositorio extends JpaRepository<Carga, Integer> {
 			"WHERE c.productor.idUsuario = :idProductor AND l.estadoLote = 'entregado' ORDER BY l.fechaLlegada DESC")
 	List<Carga> listarCargasEntregadasPorProductor(@Param("idProductor") Integer idProductor);
 
+    @Query("SELECT c FROM Carga c JOIN FETCH c.cultivo WHERE c.productor.idUsuario = :idProductor ORDER BY c.fechaPublicacion DESC")
+    List<Carga> listarCargasPorProductor(@Param("idProductor") Integer idProductor);
+
 	boolean existsByLote_IdLoteAndProductor_IdUsuario(Integer idLote, Integer idProductor);
 
 	@Query("SELECT COALESCE(SUM(c.pesoKg), 0.0) FROM Carga c WHERE c.lote.idLote = :idLote AND c.estadoCarga <> 'cancelada'")
