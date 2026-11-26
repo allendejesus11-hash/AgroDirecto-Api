@@ -3,14 +3,14 @@
 API REST construida con Spring Boot (Java 21), siguiendo la arquitectura `Controller → Service → Repository → Entity`, con DTOs simples para los contratos que no coinciden con las entidades, manejo básico de errores HTTP y seguridad JWT basada en roles.
 
 ## Cómo correrlo
-1. En PostgreSQL crear la base: `CREATE DATABASE agrodirecto;` y ejecutar sobre ella `src/main/resources/db/agrodirecto_schema_postgresql.sql` (crea las 11 tablas).
+1. En PostgreSQL crear la base: `CREATE DATABASE agrodirecto;`. Con `ddl-auto=update`, Hibernate crea las tablas al arrancar. Para usar las restricciones CHECK e índices específicos del esquema manual, también se incluye `src/main/resources/db/agrodirecto_schema_postgresql.sql` (se aplica en una base nueva y separada, nunca encima de tablas ya existentes sin revisarlo).
 2. Editar `src/main/resources/application.properties` con tu usuario/contraseña de PostgreSQL.
 3. `mvn spring-boot:run` (puerto 8088) o ejecutar `AgroDirectoApiApplication` desde IntelliJ IDEA.
 4. Swagger UI: http://localhost:8088/swagger-ui/index.html
 
 Dependencias: Spring Web, Spring Data JPA, JDBC API, PostgreSQL Driver, Validation, SpringDoc OpenAPI, DevTools (+ Lombok).
 
-`spring.jpa.hibernate.ddl-auto=none` a propósito: las tablas ya las crea el script, no Hibernate (a diferencia de la PC1, que usaba `update` porque sus tablas eran más simples y no tenían CHECK compuestos).
+`spring.jpa.hibernate.ddl-auto=update` se usa en esta variante para crear las tablas automáticamente. Los datos de prueba se cargan **solo en una base con las 11 tablas vacías**, mediante `DatosPruebaInitializer`; ver `DATOS_DE_PRUEBA_AUTO.md`. Para producción, deshabilitarlo con `SEED_DEMO_DATA=false` y gestionar el esquema con migraciones.
 
 ## Cobertura: 38 de 38 endpoints del documento (100% de rutas implementadas)
 
@@ -65,7 +65,7 @@ Dependencias: Spring Web, Spring Data JPA, JDBC API, PostgreSQL Driver, Validati
 - **DTOs (records) solo donde el contrato del endpoint lo exige**: la PC1 de ejemplo no usa DTOs porque sus formularios son casi idénticos a la entidad. Aquí sí hicieron falta en registro, cambios de estado y algunos POST, porque el documento de endpoints define un JSON distinto al de la entidad completa (por ejemplo, el registro no manda el objeto `rol` completo, solo se infiere del path).
 - **Identidad del usuario:** las operaciones sensibles usan el usuario autenticado por JWT, no un `idUsuario` libre enviado por el cliente.
 - **Errores HTTP:** `ApiExceptionHandler` traduce errores de validación (400), permisos (403), conflictos (409) y recursos inexistentes (404) a JSON.
-- **`ddl-auto=none`**: la única diferencia de configuración real frente a la PC1, y es obligatoria porque el script SQL ya trae CHECK compuestos y los índices filtrados que Hibernate no podría generar solo.
+- **`ddl-auto=update` (desarrollo)**: permite crear las tablas automáticamente; no sustituye los CHECK compuestos e índices parciales del esquema SQL manual. Para producción deben aplicarse migraciones controladas.
 
 ## Seguridad (JWT)
 

@@ -35,8 +35,10 @@ public interface LoteRepositorio extends JpaRepository<Lote, Integer> {
 			"ORDER BY l.fechaSalida DESC")
 	List<Lote> listarLotesEntregadosDeProductor(@Param("idProductor") Integer idProductor);
 
-	@Query("SELECT COALESCE(SUM(l.montoNeto), 0.0) FROM Lote l JOIN l.cargas c " +
-			"WHERE c.productor.idUsuario = :idProductor AND l.estadoPago = 'pagado'")
+	// Cada lote cuenta una sola vez, aunque el productor tenga varias cargas en el mismo lote.
+	@Query("SELECT COALESCE(SUM(l.montoNeto), 0.0) FROM Lote l " +
+			"WHERE l.estadoPago = 'pagado' AND l.idLote IN " +
+			"(SELECT c.lote.idLote FROM Carga c WHERE c.productor.idUsuario = :idProductor AND c.lote IS NOT NULL)")
 	Double calcularSaldoProductor(@Param("idProductor") Integer idProductor);
 
 	@Query("SELECT l FROM Lote l WHERE l.estadoPago IS NOT NULL " +

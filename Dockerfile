@@ -12,5 +12,5 @@ WORKDIR /app
 
 COPY --from=build /app/target/*.jar backend.jar
 
-EXPOSE 8080
+EXPOSE 8088
 ENTRYPOINT ["java", "-jar", "backend.jar"]

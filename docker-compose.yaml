@@ -1,40 +1,46 @@
+# Backend AgroDirecto. Copia .env.example a .env y coloca credenciales.
+# En una instalacion con volumen PostgreSQL existente, usa la contraseña ORIGINAL.
 services:
   app:
-    image: 'docker-spring-boot-postgres:latest'
+    image: docker-spring-boot-postgres:latest
     build:
-      context: ./agrodirecto-main
+      context: .
+      dockerfile: Dockerfile
     container_name: agrodirecto-api
     ports:
       - "8080:8088"
-    networks:
-      - agrodirecto-network
+    restart: unless-stopped
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgre
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/agrodirecto
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgre
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=create-drop
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/agrodirecto
+      SPRING_DATASOURCE_USERNAME: "${POSTGRES_USER:-postgres}"
+      SPRING_DATASOURCE_PASSWORD: "${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}"
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SEED_DEMO_DATA: "false"
+      JWT_SECRET: "${JWT_SECRET:?Define JWT_SECRET en .env}"
+
   db:
     image: postgres:16-alpine
-    volumes:
-      - db_data:/var/lib/postgresql/data
-      - ./agrodirecto-main/src/main/resources/db/agrodirecto_schema_postgresql.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-      - ./datos_prueba_postgresql_bcrypt.sql:/docker-entrypoint-initdb.d/02-data.sql:ro
-    restart: always
     container_name: db
-    networks:
-      - agrodirecto-network
+    restart: unless-stopped
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgre
-      - POSTGRES_DB=agrodirecto
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}"
+      POSTGRES_DB: "${POSTGRES_DB:-agrodirecto}"
     ports:
       - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      # Solamente se ejecutan al inicializar un VOLUMEN NUEVO y VACIO.
+      - ./src/main/resources/db/agrodirecto_schema_postgresql.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./src/main/resources/db/datos_prueba_postgresql_bcrypt.sql:/docker-entrypoint-initdb.d/02-datos.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
 volumes:
   db_data:
-networks:
-  agrodirectop-network:
-    driver: bridge
