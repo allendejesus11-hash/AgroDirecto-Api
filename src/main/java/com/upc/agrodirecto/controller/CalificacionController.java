@@ -18,6 +18,7 @@ public class CalificacionController {
 	private CalificacionServicios calificacionServicios;
 	@Autowired
 	private AuthenticatedUserService authenticatedUserService;
+	@Autowired private com.upc.agrodirecto.servicios.LoteServicios loteServicios;
 
 	@PostMapping
 	public ResponseEntity<Calificacion> calificar(@RequestBody CalificacionRequest req) {
@@ -27,6 +28,7 @@ public class CalificacionController {
 
 	@GetMapping("/lote/{idLote}")
 	public List<Calificacion> porLote(@PathVariable Integer idLote) {
+		loteServicios.seguimiento(idLote, authenticatedUserService.getCurrentUser());
 		return calificacionServicios.listarPorLote(idLote);
 	}
 }

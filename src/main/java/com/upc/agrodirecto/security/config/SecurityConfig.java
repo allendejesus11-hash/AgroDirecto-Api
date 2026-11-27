@@ -90,6 +90,8 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/lotes/*/confirmar-entrega").hasRole("TRANSPORTISTA")
                         .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/lotes/*/reportar-retraso").hasRole("TRANSPORTISTA")
                         .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/cargas/*/asignar-retorno").hasRole("TRANSPORTISTA")
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/chats/solicitudes").hasAnyRole("PRODUCTOR", "TRANSPORTISTA", "ADMINISTRADOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/lotes/*/ubicacion").hasRole("TRANSPORTISTA")
                         .requestMatchers("/api/v1/usuarios", "/api/v1/usuarios/*/estado", "/api/v1/usuarios/*/administrador", "/api/v1/chats/solicitudes", "/api/v1/chats/solicitudes/*/estado", "/api/v1/transacciones/**", "/api/v1/reportes/transacciones/**", "/api/v1/cargas").hasRole("ADMINISTRADOR")
                         .requestMatchers("/api/v1/reportes/reputacion-transportista/**").authenticated()
                         .anyRequest().authenticated()

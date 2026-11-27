@@ -1,0 +1,40 @@
+# AgroDirecto – integración Angular completa y API AWS (27/11/2026)
+
+Base: Angularvfinal-COMPLETO (3) y AgroDirecto-API-AWS-ACTUALIZADA-RED-DOCKER. Mantiene Spring Boot 4.0.8, Java 21, Angular 22, PostgreSQL 16, los dos EC2 y la red Docker ya existente. No incluye `.env`, node_modules, target ni cachés. Los CSS y los recursos gráficos originales se conservan; se ajustaron plantillas y lógica que mostraban datos ficticios o no estaban conectadas.
+
+## Cambios principales
+- Reportes de administrador: se conserva la corrección del ClassCastException (sumas escalares). El gráfico usa barras centradas de ancho limitado, códigos completos, mes seleccionado y lista real de transacciones por lote. Se muestran productores/transportista y fecha de transacción. El gráfico muestra hasta seis lotes recientes y la lista todos los resultados.
+- Productor: se conservan cargas y lotes-consolidación; el saldo, recibo e historial calculan una **estimación proporcional por peso** de los importes del lote (se reutiliza el criterio de reparto del flete). Bruto menos comisión = neto individual. Puede haber diferencias de centavos al sumar todas las partes por redondeo; no es un sistema bancario ni una liquidación real. Confirmar esta regla con el equipo.
+- Seguimiento: estados `en_transito`/`con_retraso`, filtros `activos`, acceso restringido a participantes, posición/ETA persistidas, motivo de retraso y notificación al productor. GPS explícito con permiso de navegador, polling de estado cada 30 s, actualización GPS limitada a una por 15 s. GPS automático exige HTTPS o localhost; para el HTTP actual se permite ingresar coordenadas manualmente. Mapa general Lima es referencia, no ubicación real ni cálculo de rutas. ETA se informa manualmente; no hay cálculo de tráfico.
+- Chat: GET mensajes (antes faltaba), lectura y envío exclusivamente por participantes de solicitud aprobada; consulta cada 5 s mientras está abierto. La lista de solicitudes está filtrada por participante (admin ve todas). No se añadió un flujo de creación automática de solicitudes; se utilizan solicitudes existentes.
+- Gastos: adapta concepto/monto y respuesta {gastos,totalGastos} de la API, desglosa categorías y muestra fecha/hora.
+- Premium: adapta `premiumHasta` y `esPremium`, envía monto demo 49, vencimiento en servidor. Sin pasarela de cobro; el inicio real de suscripción y cobros no se inventan. Beneficios avanzados/priorización no están validados de punta a punta.
+- Entrega: confirmación manual del código del lote, usando estado real y bloqueo contra doble confirmación. No se implementó escaneo de cámara/QR.
+- Historial y precios: se reemplazaron datos estáticos por consultas reales, tendencias basadas en el día anterior (sin predicción automática). Pantallas antiguas de rutas/bitácora redirigen a las pantallas integradas. Perfil público accesible desde consolidación. Reportar abuso sigue fuera de alcance.
+- Docker: conserva API pública 8080/interna 8088, proxy frontend 4200, red externa agrodirecto_agrodirecto-network y volumen agrodirecto_db_data. No crea otra base ni cambia contraseñas.
+
+## Actualizar la EC2 backend existente (después de subir el ZIP API a su repositorio original)
+1. `cd ~/AgroDirecto` y `git status --short`. Si hay cambios locales (por ejemplo red Docker), guárdalos con `git stash push -u -m "Respaldo AWS antes de actualizar"`. No ejecutar stash pop automáticamente. Mantén `.env` original ignorado por Git. Nunca hagas reset --hard ni down -v.
+2. `git pull --ff-only origin main`. Comprueba que la red de PostgreSQL es la correcta con `sudo docker inspect -f '{{range $n, $v := .NetworkSettings.Networks}}{{println $n}}{{end}}' db`. Si no coincide, configura `DOCKER_NETWORK_NAME` en `.env`. Verifica el volumen del contenedor db con `sudo docker inspect -f '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql/data"}}{{.Name}}{{end}}{{end}}' db`. Si no coincide, configura `POSTGRES_VOLUME_NAME` en .env. No compartas secretos. `sudo docker compose config --quiet`.
+3. Backup fuera del repositorio (recomendado): `umask 077; sudo docker exec db pg_dump -U postgres -d agrodirecto -Fc > ~/agrodirecto-antes-seguimiento.dump`. Verifica que el archivo no esté vacío.
+4. **OBLIGATORIO antes de levantar la API nueva:** `sudo docker exec -i db psql -X -v ON_ERROR_STOP=1 -1 -U postgres -d agrodirecto < src/main/resources/db/migraciones/2026-11-27_seguimiento.sql`. Agrega solo 5 columnas nullable, idempotente. Si falla, detenerse; no iniciar API nueva todavía. Hibernate permanece en validate. La migración anterior de tipos ya se ejecutó en esta EC2 y no hace falta repetirla.
+5. `sudo docker compose build app && sudo docker compose up -d --no-deps --force-recreate app`.
+6. `sudo docker logs --tail=50 agrodirecto-api` y verificar `Started AgroDirectoApiApplication`. `python3 scripts/verificar_despliegue.py http://localhost:8080` comprueba las 41 rutas de Angular en OpenAPI. Después `python3 scripts/probar_integracion.py http://localhost:8080` y prueba las tres cuentas/roles; no enviar tokens/credenciales al chat.
+7. Actualiza la EC2 frontend (ver README del frontend). Conserva IP API_TARGET y el puerto 4200. Cierra sesión e inicia de nuevo para limpiar token antiguo si cambió.
+
+## Datos de prueba (opcionales; solo entorno académico)
+El seed original contiene un único lote con pago y fecha de transacción: L-2026-005, S/2000 y S/100 de comisión. Los otros cuatro lotes no son transacciones del mes. No ejecutar `datos_prueba_postgresql_bcrypt.sql` sobre la BD existente: contiene TRUNCATE y borra datos.
+
+Para complementar sin borrar nada:
+`sudo docker exec -i db psql -X -v ON_ERROR_STOP=1 -U postgres -d agrodirecto < src/main/resources/db/datos_demo_complementarios.sql`
+Agrega 4 lotes ficticios y 4 cargas, con códigos DEMO-*, por S/4550 y comisión S/227.50. Incluye un pago pendiente, que cuenta en el reporte actual según su criterio de estado_pago no nulo. Con el único lote original en el mismo mes, y sin otros datos: 5 transacciones, S/6550.00, S/327.50. Si se ejecuta en otro mes, o hay otros registros, los totales serán diferentes. Requiere usuarios de la semilla original; no usa IDs fijos. No repetir para actualizar sus fechas.
+
+Para precios ficticios de hoy/ayer (opcional): `sudo docker exec -i db psql -X -v ON_ERROR_STOP=1 -U postgres -d agrodirecto < src/main/resources/db/datos_demo_precios.sql`.
+
+Para probar el chat y seguimiento: inicia como administrador y aprueba la solicitud pendiente del lote original L-2026-003 (si sigue pendiente), luego entra con productor María y transportista Miguel. No se cambiaron las contraseñas de prueba. No aprobar ni alterar chats de personas reales como parte de esta prueba.
+
+## Instalación nueva (sin BD existente)
+Crear `.env` desde `.env.example` con credenciales propias y `sudo docker network create agrodirecto_agrodirecto-network` si no existe. El esquema ya incluye las nuevas columnas. Docker ejecuta los scripts iniciales solo si el volumen está vacío. El seed de inicio contiene cuentas demo con contraseña conocida; no usar esos datos en producción. No exponer 5433 a Internet. El despliegue actual usa HTTP/ng serve para demostración, no producción. Usar HTTPS para GPS real y protección de credenciales.
+
+## Verificaciones y límites
+Comprobación estática: 42 llamadas HTTP (41 métodos/rutas distintos) de Angular tienen controlador compatible, sin rutas de servicio ni links estáticos faltantes; análisis sintáctico de 75 Java y 47 TypeScript; YAML parseado; ZIP íntegros. Se incluyen scripts de comprobación de despliegue. No se pudieron descargar las dependencias (DNS/registro npm inaccesible); entorno sin Maven instalado, Docker, servidor PostgreSQL ni Node compatible con el lockfile (disponible 22.16; requiere >=22.22.3/24.15). No se ejecutó compilación Angular/Spring completa, ni prueba SQL real, ni prueba navegador/AWS. No declarar 100% de HUs aprobadas hasta ejecutar aceptación de cada historia; la pasarela de pago, GPS automático bajo HTTP, IA de precios y escaneo QR de cámara no se incluyen.

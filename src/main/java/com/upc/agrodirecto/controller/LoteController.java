@@ -1,6 +1,7 @@
 package com.upc.agrodirecto.controller;
 
 import com.upc.agrodirecto.dto.ConfirmarEntregaRequest;
+import com.upc.agrodirecto.dto.UbicacionLoteRequest;
 import com.upc.agrodirecto.dto.ReportarRetrasoRequest;
 import com.upc.agrodirecto.entidades.Lote;
 import com.upc.agrodirecto.servicios.LoteServicios;
@@ -19,20 +20,24 @@ public class LoteController {
 
 	@GetMapping("/{idLote}")
 	public Lote detalle(@PathVariable Integer idLote) {
+		loteServicios.seguimiento(idLote, authenticatedUserService.getCurrentUser());
 		return loteServicios.detalleConCargas(idLote);
 	}
 
 	@GetMapping("/{idLote}/financiero")
-	public Lote desgloseFinanciero(@PathVariable Integer idLote) {
-		// Se reutiliza la misma entidad Lote; ya trae fleteTotal, porcentajeComision,
-		// montoComision, montoNeto y estadoPago.
-		return loteServicios.seguimiento(idLote);
+	public java.util.Map<String,Object> desgloseFinanciero(@PathVariable Integer idLote) {
+		return loteServicios.financiero(idLote, authenticatedUserService.getCurrentUser());
 	}
 
 	@GetMapping("/{idLote}/seguimiento")
 	public Lote seguimiento(@PathVariable Integer idLote) {
-		return loteServicios.seguimiento(idLote);
+		return loteServicios.seguimiento(idLote, authenticatedUserService.getCurrentUser());
 	}
+
+    @PatchMapping("/{idLote}/ubicacion")
+    public Lote actualizarUbicacion(@PathVariable Integer idLote, @Valid @RequestBody UbicacionLoteRequest req) {
+        return loteServicios.actualizarUbicacion(idLote, req, authenticatedUserService.getCurrentUser());
+    }
 
 	@PatchMapping("/{idLote}/confirmar-entrega")
 	public Lote confirmarEntrega(@PathVariable Integer idLote, @Valid @RequestBody ConfirmarEntregaRequest req) {

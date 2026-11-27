@@ -23,7 +23,8 @@ public class SuscripcionController {
 	@PostMapping
 	public SuscripcionResponse contratar(@PathVariable Integer idUsuario, @Valid @RequestBody SuscripcionRequest req) {
 		verificarPropietario(idUsuario);
-		Usuario u = suscripcionServicios.contratarPremium(idUsuario);
+        if (Double.compare(req.montoPagado(), 49.0) != 0) throw new IllegalArgumentException("El precio del plan demo es S/ 49");
+        Usuario u = suscripcionServicios.contratarPremium(idUsuario);
 		return new SuscripcionResponse(u.getIdUsuario(), u.getPremiumHasta(), true);
 	}
 

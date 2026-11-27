@@ -8,6 +8,10 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface CargaRepositorio extends JpaRepository<Carga, Integer> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM Carga c WHERE c.idCarga = :idCarga")
+    java.util.Optional<Carga> bloquearPorId(@Param("idCarga") Integer idCarga);
+
 
 	@Query("SELECT c FROM Carga c JOIN FETCH c.productor p JOIN FETCH c.cultivo cu " +
 			"WHERE (:estado IS NULL OR c.estadoCarga = :estado) ORDER BY c.fechaPublicacion DESC")

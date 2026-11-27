@@ -12,9 +12,12 @@ import java.util.List;
 public class TransportistaController {
 	@Autowired
 	private LoteServicios loteServicios;
+	@Autowired private com.upc.agrodirecto.security.service.AuthenticatedUserService authenticatedUserService;
 
 	@GetMapping("/{idTransportista}/lotes")
 	public List<Lote> historial(@PathVariable Integer idTransportista, @RequestParam(required = false) String estado) {
-		return loteServicios.historialTransportista(idTransportista, estado);
+        if (!authenticatedUserService.getCurrentUser().getIdUsuario().equals(idTransportista))
+            throw new org.springframework.security.access.AccessDeniedException("Solo puedes consultar tus propios lotes");
+        return loteServicios.historialTransportista(idTransportista, estado);
 	}
 }

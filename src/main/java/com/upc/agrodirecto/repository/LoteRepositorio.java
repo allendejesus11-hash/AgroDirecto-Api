@@ -10,6 +10,11 @@ import java.util.Optional;
 import java.time.LocalDateTime;
 
 public interface LoteRepositorio extends JpaRepository<Lote, Integer> {
+    long countByTransportista_IdUsuarioAndEstadoLote(Integer idTransportista, String estadoLote);
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT l FROM Lote l WHERE l.idLote = :idLote")
+    Optional<Lote> bloquearPorId(@Param("idLote") Integer idLote);
+
     @Query("SELECT DISTINCT l FROM Lote l LEFT JOIN FETCH l.cargas WHERE l.idLote IN (SELECT c.lote.idLote FROM Carga c WHERE c.productor.idUsuario = :idProductor AND c.lote IS NOT NULL) ORDER BY l.fechaCreacion DESC")
     List<Lote> listarConsolidacionesPorProductor(@Param("idProductor") Integer idProductor);
 
@@ -30,10 +35,14 @@ public interface LoteRepositorio extends JpaRepository<Lote, Integer> {
 			"ORDER BY l.fechaTransaccion DESC")
 	List<Lote> listarTransacciones(@Param("estadoPago") String estadoPago);
 
-	@Query("SELECT DISTINCT l FROM Lote l JOIN l.cargas c " +
-			"WHERE c.productor.idUsuario = :idProductor AND l.estadoLote = 'entregado' " +
+	@Query("SELECT DISTINCT l FROM Lote l LEFT JOIN FETCH l.cargas WHERE l.idLote IN (SELECT c.lote.idLote FROM Carga c WHERE c.productor.idUsuario = :idProductor AND c.lote IS NOT NULL) " +
+			"AND l.estadoLote = 'entregado' " +
 			"ORDER BY l.fechaSalida DESC")
 	List<Lote> listarLotesEntregadosDeProductor(@Param("idProductor") Integer idProductor);
+
+    @Query("SELECT DISTINCT l FROM Lote l LEFT JOIN FETCH l.cargas WHERE l.estadoPago = 'pagado' AND l.idLote IN " +
+            "(SELECT c.lote.idLote FROM Carga c WHERE c.productor.idUsuario = :idProductor AND c.lote IS NOT NULL)")
+    List<Lote> listarLotesPagadosDeProductor(@Param("idProductor") Integer idProductor);
 
 	// Cada lote cuenta una sola vez, aunque el productor tenga varias cargas en el mismo lote.
 	@Query("SELECT COALESCE(SUM(l.montoNeto), 0.0) FROM Lote l " +
@@ -55,8 +64,8 @@ public interface LoteRepositorio extends JpaRepository<Lote, Integer> {
 			"FROM Lote l WHERE l.estadoPago IS NOT NULL AND l.fechaTransaccion >= :inicio AND l.fechaTransaccion < :fin")
 	Double sumarComisionesPorPeriodo(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
-	@Query("SELECT DISTINCT l FROM Lote l JOIN l.cargas c " +
-			"WHERE c.productor.idUsuario = :idProductor AND l.estadoLote = 'entregado' " +
+	@Query("SELECT DISTINCT l FROM Lote l LEFT JOIN FETCH l.cargas WHERE l.idLote IN (SELECT c.lote.idLote FROM Carga c WHERE c.productor.idUsuario = :idProductor AND c.lote IS NOT NULL) " +
+			"AND l.estadoLote = 'entregado' " +
 			"AND l.fechaLlegada >= :inicio AND l.fechaLlegada < :fin ORDER BY l.fechaLlegada DESC")
 	List<Lote> listarLotesEntregadosDeProductorEnPeriodo(@Param("idProductor") Integer idProductor,
 			@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);

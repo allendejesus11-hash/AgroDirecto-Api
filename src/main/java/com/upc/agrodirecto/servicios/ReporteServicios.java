@@ -88,15 +88,17 @@ public class ReporteServicios {
         Map<String, Object> respuesta = new LinkedHashMap<>();
         respuesta.put("promedioEstrellas", calificaciones.isEmpty() ? null : redondear(promedio));
         respuesta.put("totalResenas", (long) calificaciones.size());
+        respuesta.put("totalViajes", loteRepositorio.countByTransportista_IdUsuarioAndEstadoLote(idTransportista, "entregado"));
         respuesta.put("comentarios", comentarios);
         return respuesta;
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Object> resumenProductor(Integer idProductor) {
         YearMonth periodo = YearMonth.now();
         List<Lote> lotes = loteRepositorio.listarLotesEntregadosDeProductorEnPeriodo(
                 idProductor, periodo.atDay(1).atStartOfDay(), periodo.plusMonths(1).atDay(1).atStartOfDay());
-        double neto = lotes.stream().map(Lote::getMontoNeto).filter(Objects::nonNull).mapToDouble(Double::doubleValue).sum();
+        double neto = lotes.stream().filter(l -> "pagado".equals(l.getEstadoPago())).mapToDouble(l -> LoteServicios.netoProductor(l,idProductor)).sum();
         return Map.of("totalLotesCompletados", (long) lotes.size(), "montoNetoAcumulado", redondear(neto));
     }
 

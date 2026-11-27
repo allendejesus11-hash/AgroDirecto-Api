@@ -113,6 +113,11 @@ CREATE TABLE lote (
         CHECK (estado_pago IN ('pendiente', 'pagado')),
     fecha_transaccion   TIMESTAMP NULL,
 
+    latitud              DOUBLE PRECISION NULL,
+    longitud             DOUBLE PRECISION NULL,
+    fecha_actualizacion  TIMESTAMP NULL,
+    motivo_retraso       VARCHAR(250) NULL,
+    eta                  TIMESTAMP NULL,
     CONSTRAINT ck_lote_fechas CHECK (fecha_llegada IS NULL OR fecha_salida IS NULL
                                      OR fecha_llegada >= fecha_salida),
     CONSTRAINT fk_lote_transportista FOREIGN KEY (id_transportista)

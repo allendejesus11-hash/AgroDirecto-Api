@@ -23,9 +23,20 @@ public class ChatServicios {
 	@Autowired
 	private UsuarioRepositorio usuarioRepositorio;
 
-	public List<SolicitudChat> listarSolicitudes(String estado) {
-		return solicitudChatRepositorio.listarPorEstado(estado);
-	}
+	public List<SolicitudChat> listarSolicitudes(String estado, Usuario usuario) {
+        return solicitudChatRepositorio.listarPorEstado(estado).stream()
+            .filter(s -> usuario.getRol().getIdRol() == 3 || s.getProductor().getIdUsuario().equals(usuario.getIdUsuario())
+                    || s.getTransportista().getIdUsuario().equals(usuario.getIdUsuario())).toList();
+    }
+
+    public List<MensajeChat> listarMensajes(Integer idSolicitud, Integer idUsuario) {
+        SolicitudChat solicitud = solicitudChatRepositorio.findById(idSolicitud).orElseThrow();
+        boolean participante = solicitud.getProductor().getIdUsuario().equals(idUsuario)
+                || solicitud.getTransportista().getIdUsuario().equals(idUsuario);
+        if (!participante || !"aprobado".equals(solicitud.getEstadoSolicitud()))
+            throw new org.springframework.security.access.AccessDeniedException("El chat debe estar aprobado y pertenecer al usuario");
+        return mensajeChatRepositorio.findBySolicitud_IdSolicitudOrderByFechaEnvioAscIdMensajeAsc(idSolicitud);
+    }
 
 	public SolicitudChat moderarSolicitud(Integer idSolicitud, EstadoSolicitudRequest req, Integer idAdministradorAutenticado) {
 		SolicitudChat solicitud = solicitudChatRepositorio.findById(idSolicitud).orElseThrow();

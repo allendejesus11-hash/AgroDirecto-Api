@@ -23,7 +23,7 @@ public class ChatController {
 
 	@GetMapping
 	public List<SolicitudChat> listar(@RequestParam(required = false) String estado) {
-		return chatServicios.listarSolicitudes(estado);
+		return chatServicios.listarSolicitudes(estado, authenticatedUserService.getCurrentUser());
 	}
 
 	@PutMapping("/{idSolicitud}/estado")
@@ -31,6 +31,10 @@ public class ChatController {
 		return chatServicios.moderarSolicitud(idSolicitud, req, authenticatedUserService.getCurrentUser().getIdUsuario());
 	}
 
+    @GetMapping("/{idSolicitud}/mensajes")
+    public List<MensajeChat> mensajes(@PathVariable Integer idSolicitud) {
+        return chatServicios.listarMensajes(idSolicitud, authenticatedUserService.getCurrentUser().getIdUsuario());
+    }
 	@PostMapping("/{idSolicitud}/mensajes")
 	public ResponseEntity<MensajeChat> enviarMensaje(@PathVariable Integer idSolicitud, @RequestBody MensajeChatRequest req) {
 		MensajeChat mensaje = chatServicios.enviarMensaje(idSolicitud, req, authenticatedUserService.getCurrentUser().getIdUsuario());

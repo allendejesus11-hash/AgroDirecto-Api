@@ -34,6 +34,11 @@ public class Lote {
 	private String destino;
 	private LocalDateTime fechaSalida;
 	private LocalDateTime fechaLlegada;
+	private Double latitud;
+	private Double longitud;
+	private LocalDateTime fechaActualizacion;
+	private String motivoRetraso;
+	private LocalDateTime eta;
 	private Double fleteTotal;
 
 	// Datos de la transaccion (antes tabla transaccion)

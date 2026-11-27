@@ -74,15 +74,18 @@ public class CargaServicios {
 		return cargaRepositorio.listarCargasDeRetornoDisponibles();
 	}
 
+	@org.springframework.transaction.annotation.Transactional
 	public Carga asignarRetorno(Integer idCarga, Integer idLote, Integer idTransportista) {
-		Carga carga = cargaRepositorio.findById(idCarga).orElseThrow();
+        Lote lote = loteRepositorio.bloquearPorId(idLote).orElseThrow();
+		Carga carga = cargaRepositorio.bloquearPorId(idCarga).orElseThrow();
 		if (!"publicada".equals(carga.getEstadoCarga())) {
 			throw new IllegalStateException("La carga ya no esta disponible para asignar");
 		}
-		Lote lote = loteRepositorio.findById(idLote).orElseThrow();
 		if (lote.getTransportista() == null || !lote.getTransportista().getIdUsuario().equals(idTransportista)) {
 			throw new org.springframework.security.access.AccessDeniedException("El lote no pertenece al transportista autenticado");
 		}
+        if (!List.of("en_transito", "con_retraso").contains(lote.getEstadoLote())) throw new IllegalStateException("El lote debe estar activo");
+        if (!"seco".equals(carga.getTipoCarga()) || carga.getLote() != null) throw new IllegalStateException("La carga no está disponible para retorno");
 		Usuario transportista = usuarioRepositorio.findById(idTransportista).orElseThrow();
 		Double pesoActual = cargaRepositorio.sumarPesoPorLote(idLote);
 		double pesoActualKg = pesoActual == null ? 0.0 : pesoActual;

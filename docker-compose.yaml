@@ -44,3 +44,12 @@ services:
 
 volumes:
   db_data:
+    name: "${POSTGRES_VOLUME_NAME:-agrodirecto_db_data}"
+
+# Se usa la red existente donde ya esta conectado el contenedor PostgreSQL 'db'.
+# Necesario cuando se recrea solamente la API con --no-deps en la EC2 existente.
+# Para una instalacion nueva, primero crear esta red: docker network create agrodirecto_agrodirecto-network
+networks:
+  default:
+    external: true
+    name: "${DOCKER_NETWORK_NAME:-agrodirecto_agrodirecto-network}"
