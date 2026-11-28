@@ -2,6 +2,7 @@ package com.upc.agrodirecto.servicios;
 
 import com.upc.agrodirecto.dto.ConfirmarEntregaRequest;
 import com.upc.agrodirecto.dto.UbicacionLoteRequest;
+import com.upc.agrodirecto.dto.PuntosRutaRequest;
 import com.upc.agrodirecto.entidades.Usuario;
 import com.upc.agrodirecto.entidades.Notificacion;
 import com.upc.agrodirecto.repository.NotificacionRepositorio;
@@ -66,7 +67,7 @@ public class LoteServicios {
 		}
         lote.setEstadoLote("con_retraso");
         lote.setMotivoRetraso(req.motivo());
-        lote.setFechaActualizacion(LocalDateTime.now());
+        // Reportar un retraso no equivale a registrar una nueva posición GPS.
         lote.getCargas().stream().map(Carga::getProductor).filter(java.util.Objects::nonNull)
                 .map(Usuario::getIdUsuario).distinct().forEach(id -> {
                     Usuario productor = lote.getCargas().stream().map(Carga::getProductor)
@@ -88,15 +89,36 @@ public class LoteServicios {
     }
 
     @Transactional
+    public Lote guardarPuntosRuta(Integer idLote, PuntosRutaRequest req, Usuario usuario) {
+        Lote lote = loteRepositorio.bloquearPorId(idLote).orElseThrow();
+        if (usuario.getRol().getIdRol() != 2 || lote.getTransportista() == null
+                || !lote.getTransportista().getIdUsuario().equals(usuario.getIdUsuario())) {
+            throw new org.springframework.security.access.AccessDeniedException("Solo el transportista asignado puede confirmar los puntos de ruta");
+        }
+        if (!List.of("confirmado", "en_transito", "con_retraso").contains(lote.getEstadoLote()))
+            throw new IllegalStateException("El lote debe estar confirmado o activo");
+        Coordenadas.validar(req.latitudOrigen(), req.longitudOrigen(), false);
+        Coordenadas.validar(req.latitudDestino(), req.longitudDestino(), false);
+        boolean cambioDestino = !java.util.Objects.equals(lote.getLatitudDestino(), req.latitudDestino())
+                || !java.util.Objects.equals(lote.getLongitudDestino(), req.longitudDestino());
+        lote.setLatitudOrigen(req.latitudOrigen());
+        lote.setLongitudOrigen(req.longitudOrigen());
+        lote.setLatitudDestino(req.latitudDestino());
+        lote.setLongitudDestino(req.longitudDestino());
+        if (cambioDestino) lote.setEta(null); // La estimación anterior ya no corresponde al destino.
+        return loteRepositorio.save(lote);
+    }
+
+    @Transactional
     public Lote actualizarUbicacion(Integer idLote, UbicacionLoteRequest req, Usuario usuario) {
         Lote lote = loteRepositorio.bloquearPorId(idLote).orElseThrow();
         seguimiento(idLote, usuario);
         if (usuario.getRol().getIdRol() != 2 || !List.of("en_transito", "con_retraso").contains(lote.getEstadoLote()))
             throw new org.springframework.security.access.AccessDeniedException("Solo el transportista de un viaje activo puede actualizar la ubicación");
-        if (!Double.isFinite(req.latitud()) || !Double.isFinite(req.longitud())) throw new IllegalArgumentException("Coordenadas inválidas");
+        Coordenadas.validar(req.latitud(), req.longitud(), false);
         lote.setLatitud(req.latitud()); lote.setLongitud(req.longitud());
-        if (req.eta() != null) lote.setEta(req.eta());
-        lote.setFechaActualizacion(LocalDateTime.now());
+        lote.setEta(req.eta());
+        lote.setFechaActualizacion(LocalDateTime.now(java.time.ZoneOffset.UTC));
         return loteRepositorio.save(lote);
     }
 

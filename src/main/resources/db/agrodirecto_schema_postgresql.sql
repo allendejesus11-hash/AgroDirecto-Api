@@ -101,6 +101,10 @@ CREATE TABLE lote (
     -- Datos del viaje (antes tabla viaje)
     origen              VARCHAR(100) NULL,
     destino             VARCHAR(100) NULL,
+    latitud_origen      DOUBLE PRECISION NULL,
+    longitud_origen     DOUBLE PRECISION NULL,
+    latitud_destino     DOUBLE PRECISION NULL,
+    longitud_destino    DOUBLE PRECISION NULL,
     fecha_salida        TIMESTAMP NULL,
     fecha_llegada       TIMESTAMP NULL,
     flete_total         DOUBLE PRECISION NULL,
@@ -120,6 +124,8 @@ CREATE TABLE lote (
     eta                  TIMESTAMP NULL,
     CONSTRAINT ck_lote_fechas CHECK (fecha_llegada IS NULL OR fecha_salida IS NULL
                                      OR fecha_llegada >= fecha_salida),
+    CONSTRAINT ck_lote_origen_gps CHECK ((latitud_origen IS NULL AND longitud_origen IS NULL) OR (latitud_origen IS NOT NULL AND longitud_origen IS NOT NULL AND latitud_origen BETWEEN -90 AND 90 AND longitud_origen BETWEEN -180 AND 180)),
+    CONSTRAINT ck_lote_destino_gps CHECK ((latitud_destino IS NULL AND longitud_destino IS NULL) OR (latitud_destino IS NOT NULL AND longitud_destino IS NOT NULL AND latitud_destino BETWEEN -90 AND 90 AND longitud_destino BETWEEN -180 AND 180)),
     CONSTRAINT fk_lote_transportista FOREIGN KEY (id_transportista)
         REFERENCES usuario(id_usuario)
 );
@@ -137,6 +143,8 @@ CREATE TABLE carga (
     tipo_carga          VARCHAR(20) NOT NULL DEFAULT 'perecible'
         CHECK (tipo_carga IN ('perecible', 'seco')),
     direccion_destino   VARCHAR(150) NOT NULL,
+    latitud_acopio      DOUBLE PRECISION NULL,
+    longitud_acopio     DOUBLE PRECISION NULL,
     tarifa_propuesta    DOUBLE PRECISION NOT NULL CHECK (tarifa_propuesta > 0),
     fecha_recojo        DATE NOT NULL,
     es_urgente          BOOLEAN NOT NULL DEFAULT FALSE,
@@ -144,6 +152,7 @@ CREATE TABLE carga (
         CHECK (estado_carga IN ('publicada', 'en_revision', 'confirmada_en_lote',
                                 'en_transito', 'entregada', 'cancelada')),
     fecha_publicacion   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_carga_acopio CHECK ((latitud_acopio IS NULL AND longitud_acopio IS NULL) OR (latitud_acopio IS NOT NULL AND longitud_acopio IS NOT NULL AND latitud_acopio BETWEEN -90 AND 90 AND longitud_acopio BETWEEN -180 AND 180)),
     CONSTRAINT fk_carga_productor FOREIGN KEY (id_productor)
         REFERENCES usuario(id_usuario) ON DELETE CASCADE,
     CONSTRAINT fk_carga_cultivo FOREIGN KEY (id_cultivo)

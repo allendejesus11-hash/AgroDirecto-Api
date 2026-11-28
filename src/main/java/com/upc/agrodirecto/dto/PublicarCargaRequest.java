@@ -14,5 +14,7 @@ public record PublicarCargaRequest(
         @NotBlank @Size(max = 150) String direccionDestino,
         @NotNull @Positive Double tarifaPropuesta,
         @NotNull LocalDate fechaRecojo,
-        Boolean esUrgente
+        Boolean esUrgente,
+        Double latitudAcopio,
+        Double longitudAcopio
 ) {}

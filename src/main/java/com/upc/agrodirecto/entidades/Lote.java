@@ -32,6 +32,10 @@ public class Lote {
 	// Datos del viaje (antes tabla viaje)
 	private String origen;
 	private String destino;
+	private Double latitudOrigen;
+	private Double longitudOrigen;
+	private Double latitudDestino;
+	private Double longitudDestino;
 	private LocalDateTime fechaSalida;
 	private LocalDateTime fechaLlegada;
 	private Double latitud;

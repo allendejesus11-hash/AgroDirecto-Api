@@ -2,6 +2,7 @@ package com.upc.agrodirecto.controller;
 
 import com.upc.agrodirecto.dto.ConfirmarEntregaRequest;
 import com.upc.agrodirecto.dto.UbicacionLoteRequest;
+import com.upc.agrodirecto.dto.PuntosRutaRequest;
 import com.upc.agrodirecto.dto.ReportarRetrasoRequest;
 import com.upc.agrodirecto.entidades.Lote;
 import com.upc.agrodirecto.servicios.LoteServicios;
@@ -33,6 +34,11 @@ public class LoteController {
 	public Lote seguimiento(@PathVariable Integer idLote) {
 		return loteServicios.seguimiento(idLote, authenticatedUserService.getCurrentUser());
 	}
+
+    @PatchMapping("/{idLote}/puntos-ruta")
+    public Lote guardarPuntosRuta(@PathVariable Integer idLote, @Valid @RequestBody PuntosRutaRequest req) {
+        return loteServicios.guardarPuntosRuta(idLote, req, authenticatedUserService.getCurrentUser());
+    }
 
     @PatchMapping("/{idLote}/ubicacion")
     public Lote actualizarUbicacion(@PathVariable Integer idLote, @Valid @RequestBody UbicacionLoteRequest req) {

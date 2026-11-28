@@ -39,6 +39,8 @@ public class Carga {
 	private Double pesoKg;
 	private String tipoCarga; // perecible | seco
 	private String direccionDestino;
+	private Double latitudAcopio;
+	private Double longitudAcopio;
 	private Double tarifaPropuesta;
 	private LocalDate fechaRecojo;
 	private Boolean esUrgente;

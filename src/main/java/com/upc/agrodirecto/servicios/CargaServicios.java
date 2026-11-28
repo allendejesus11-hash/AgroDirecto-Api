@@ -38,6 +38,7 @@ public class CargaServicios {
 			throw new IllegalArgumentException("tarifaPropuesta debe ser mayor a 0");
 		}
 
+		Coordenadas.validar(req.latitudAcopio(), req.longitudAcopio(), true);
 		Carga carga = new Carga();
 		carga.setCodigoCarga("C-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
 		carga.setProductor(productor);
@@ -45,6 +46,8 @@ public class CargaServicios {
 		carga.setPesoKg(req.pesoKg());
 		carga.setTipoCarga(req.tipoCarga());
 		carga.setDireccionDestino(req.direccionDestino());
+		carga.setLatitudAcopio(req.latitudAcopio());
+		carga.setLongitudAcopio(req.longitudAcopio());
 		carga.setTarifaPropuesta(req.tarifaPropuesta());
 		carga.setFechaRecojo(req.fechaRecojo());
 		carga.setEsUrgente(req.esUrgente() != null && req.esUrgente());
