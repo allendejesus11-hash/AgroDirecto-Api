@@ -10,7 +10,10 @@ import java.util.Optional;
 
 public interface UsuarioRepositorio extends JpaRepository<Usuario, Integer> {
 
-	long countByCorreo(String correo);
+	@org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT u FROM Usuario u WHERE u.idUsuario = :id")
+    Optional<Usuario> bloquearPorId(@Param("id") Integer id);
+    long countByCorreo(String correo);
 
 	// Lo usan AuthServicios, AuthenticatedUserService y CustomUserDetailsService
 	// (login, "quien soy" y la validacion de Spring Security respectivamente).

@@ -23,7 +23,27 @@ public class ChatServicios {
 	@Autowired
 	private UsuarioRepositorio usuarioRepositorio;
 
-	public List<SolicitudChat> listarSolicitudes(String estado, Usuario usuario) {
+	@Autowired private com.upc.agrodirecto.repository.LoteRepositorio loteRepositorio;
+    @org.springframework.transaction.annotation.Transactional
+    public void crearParaLote(com.upc.agrodirecto.entidades.Lote l) {
+        if(l.getTransportista()==null)return;
+        for(var c:l.getCargas()) {
+            if("cancelada".equals(c.getEstadoCarga())) continue;
+            Usuario p=c.getProductor();
+            if(!solicitudChatRepositorio.existsByProductor_IdUsuarioAndTransportista_IdUsuarioAndLote_IdLote(p.getIdUsuario(),l.getTransportista().getIdUsuario(),l.getIdLote())) {
+                SolicitudChat s=new SolicitudChat();s.setProductor(p);s.setTransportista(l.getTransportista());s.setLote(l);s.setEstadoSolicitud("pendiente");s.setFechaSolicitud(LocalDateTime.now());solicitudChatRepositorio.saveAndFlush(s);
+            }
+        }
+    }
+    @org.springframework.transaction.annotation.Transactional
+    public List<SolicitudChat> solicitar(Integer id,Usuario u) {
+        var l=loteRepositorio.bloquearPorId(id).orElseThrow();
+        boolean participa=u.getRol().getIdRol()==3 || (l.getTransportista()!=null && l.getTransportista().getIdUsuario().equals(u.getIdUsuario())) || l.getCargas().stream().anyMatch(c->c.getProductor().getIdUsuario().equals(u.getIdUsuario()));
+        if(!participa)throw new org.springframework.security.access.AccessDeniedException("No perteneces al lote");
+        if(l.getTransportista()==null || !List.of("formandose","confirmado","en_transito","con_retraso").contains(l.getEstadoLote()))throw new IllegalStateException("Lote sin transportista o finalizado");
+        crearParaLote(l);return listarSolicitudes(null,u).stream().filter(s->s.getLote().getIdLote().equals(id)).toList();
+    }
+    public List<SolicitudChat> listarSolicitudes(String estado, Usuario usuario) {
         return solicitudChatRepositorio.listarPorEstado(estado).stream()
             .filter(s -> usuario.getRol().getIdRol() == 3 || s.getProductor().getIdUsuario().equals(usuario.getIdUsuario())
                     || s.getTransportista().getIdUsuario().equals(usuario.getIdUsuario())).toList();
@@ -38,8 +58,9 @@ public class ChatServicios {
         return mensajeChatRepositorio.findBySolicitud_IdSolicitudOrderByFechaEnvioAscIdMensajeAsc(idSolicitud);
     }
 
-	public SolicitudChat moderarSolicitud(Integer idSolicitud, EstadoSolicitudRequest req, Integer idAdministradorAutenticado) {
-		SolicitudChat solicitud = solicitudChatRepositorio.findById(idSolicitud).orElseThrow();
+	@org.springframework.transaction.annotation.Transactional
+    public SolicitudChat moderarSolicitud(Integer idSolicitud, EstadoSolicitudRequest req, Integer idAdministradorAutenticado) {
+		SolicitudChat solicitud = solicitudChatRepositorio.bloquear(idSolicitud).orElseThrow();
 		if (!"pendiente".equals(solicitud.getEstadoSolicitud())) {
 			throw new IllegalStateException("La solicitud ya fue moderada");
 		}

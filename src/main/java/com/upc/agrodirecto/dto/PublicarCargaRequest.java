@@ -11,10 +11,12 @@ public record PublicarCargaRequest(
         @NotNull Integer idCultivo,
         @NotNull @Positive Double pesoKg,
         @NotBlank @Pattern(regexp = "perecible|seco", message = "tipoCarga debe ser perecible o seco") String tipoCarga,
-        @NotBlank @Size(max = 150) String direccionDestino,
+        @NotBlank @Size(max = 100) String direccionDestino,
         @NotNull @Positive Double tarifaPropuesta,
         @NotNull LocalDate fechaRecojo,
         Boolean esUrgente,
         Double latitudAcopio,
-        Double longitudAcopio
+        Double longitudAcopio,
+        Double latitudDestino,
+        Double longitudDestino
 ) {}

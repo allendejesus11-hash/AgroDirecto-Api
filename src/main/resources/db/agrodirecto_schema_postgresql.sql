@@ -145,6 +145,8 @@ CREATE TABLE carga (
     direccion_destino   VARCHAR(150) NOT NULL,
     latitud_acopio      DOUBLE PRECISION NULL,
     longitud_acopio     DOUBLE PRECISION NULL,
+    latitud_destino DOUBLE PRECISION NULL,
+    longitud_destino DOUBLE PRECISION NULL,
     tarifa_propuesta    DOUBLE PRECISION NOT NULL CHECK (tarifa_propuesta > 0),
     fecha_recojo        DATE NOT NULL,
     es_urgente          BOOLEAN NOT NULL DEFAULT FALSE,
@@ -152,6 +154,7 @@ CREATE TABLE carga (
         CHECK (estado_carga IN ('publicada', 'en_revision', 'confirmada_en_lote',
                                 'en_transito', 'entregada', 'cancelada')),
     fecha_publicacion   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_carga_destino CHECK ((latitud_destino IS NULL AND longitud_destino IS NULL) OR (latitud_destino IS NOT NULL AND longitud_destino IS NOT NULL AND latitud_destino BETWEEN -90 AND 90 AND longitud_destino BETWEEN -180 AND 180)),
     CONSTRAINT ck_carga_acopio CHECK ((latitud_acopio IS NULL AND longitud_acopio IS NULL) OR (latitud_acopio IS NOT NULL AND longitud_acopio IS NOT NULL AND latitud_acopio BETWEEN -90 AND 90 AND longitud_acopio BETWEEN -180 AND 180)),
     CONSTRAINT fk_carga_productor FOREIGN KEY (id_productor)
         REFERENCES usuario(id_usuario) ON DELETE CASCADE,
@@ -223,6 +226,7 @@ CREATE TABLE precio_mercado (
     id_cultivo      INT NOT NULL,
     precio_por_kg   DOUBLE PRECISION NOT NULL,
     fecha_precio    DATE NOT NULL,
+    fuente VARCHAR(500) NULL,
     CONSTRAINT uq_precio UNIQUE (id_cultivo, fecha_precio),
     CONSTRAINT fk_precio_cultivo FOREIGN KEY (id_cultivo)
         REFERENCES cultivo(id_cultivo) ON DELETE CASCADE

@@ -41,6 +41,9 @@ public class Carga {
 	private String direccionDestino;
 	private Double latitudAcopio;
 	private Double longitudAcopio;
+	private Double latitudDestino;
+	private Double longitudDestino;
+	public Integer getIdLote() { return lote == null ? null : lote.getIdLote(); }
 	private Double tarifaPropuesta;
 	private LocalDate fechaRecojo;
 	private Boolean esUrgente;

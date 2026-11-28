@@ -48,6 +48,7 @@ public class LoteServicios {
 		}
 		lote.setEstadoLote("entregado");
 		lote.setFechaLlegada(req.fechaLlegada() != null ? req.fechaLlegada() : LocalDateTime.now());
+        if(lote.getFechaTransaccion()==null) lote.setFechaTransaccion(lote.getFechaLlegada());
 		Lote guardado = loteRepositorio.save(lote);
 		for (Carga carga : lote.getCargas() == null ? List.<Carga>of() : lote.getCargas()) {
 			carga.setEstadoCarga("entregada");
@@ -91,12 +92,11 @@ public class LoteServicios {
     @Transactional
     public Lote guardarPuntosRuta(Integer idLote, PuntosRutaRequest req, Usuario usuario) {
         Lote lote = loteRepositorio.bloquearPorId(idLote).orElseThrow();
-        if (usuario.getRol().getIdRol() != 2 || lote.getTransportista() == null
-                || !lote.getTransportista().getIdUsuario().equals(usuario.getIdUsuario())) {
-            throw new org.springframework.security.access.AccessDeniedException("Solo el transportista asignado puede confirmar los puntos de ruta");
+        if (usuario.getRol().getIdRol() != 3) {
+            throw new org.springframework.security.access.AccessDeniedException("Solo el administrador puede corregir la ruta de lotes antiguos");
         }
-        if (!List.of("confirmado", "en_transito", "con_retraso").contains(lote.getEstadoLote()))
-            throw new IllegalStateException("El lote debe estar confirmado o activo");
+        if (!List.of("formandose", "confirmado", "en_transito", "con_retraso").contains(lote.getEstadoLote()) || lote.getCargas().stream().anyMatch(c -> c.getLatitudDestino()!=null))
+            throw new IllegalStateException("Solo se corrigen coordenadas de lotes antiguos sin destino confirmado por los productores");
         Coordenadas.validar(req.latitudOrigen(), req.longitudOrigen(), false);
         Coordenadas.validar(req.latitudDestino(), req.longitudDestino(), false);
         boolean cambioDestino = !java.util.Objects.equals(lote.getLatitudDestino(), req.latitudDestino())

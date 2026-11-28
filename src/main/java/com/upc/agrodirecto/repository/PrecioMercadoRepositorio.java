@@ -10,6 +10,12 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PrecioMercadoRepositorio extends JpaRepository<PrecioMercado, Integer> {
+    @Query("SELECT pm FROM PrecioMercado pm JOIN FETCH pm.cultivo WHERE pm.fuente IS NOT NULL AND (:id IS NULL OR pm.cultivo.idCultivo=:id) AND pm.fechaPrecio >= :desde AND pm.fechaPrecio <= :hasta ORDER BY pm.fechaPrecio ASC")
+    List<PrecioMercado> historial(@Param("id") Integer id,@Param("desde") LocalDate desde,@Param("hasta") LocalDate hasta);
+    @Query("SELECT MAX(pm.fechaPrecio) FROM PrecioMercado pm WHERE pm.fuente IS NOT NULL")
+    LocalDate ultimaFechaConFuente();
+    Optional<PrecioMercado> findByCultivo_IdCultivoAndFechaPrecio(Integer id,LocalDate fecha);
+
 
 	@Query("SELECT pm FROM PrecioMercado pm JOIN FETCH pm.cultivo cu WHERE pm.fechaPrecio = :fecha")
 	List<PrecioMercado> listarPorFecha(@Param("fecha") LocalDate fecha);

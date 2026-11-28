@@ -10,6 +10,8 @@ import java.util.Optional;
 import java.time.LocalDateTime;
 
 public interface LoteRepositorio extends JpaRepository<Lote, Integer> {
+    @Query("SELECT COALESCE(SUM(c.pesoKg),0.0) FROM Carga c WHERE c.lote.transportista.idUsuario = :id AND c.lote.estadoLote IN ('formandose','confirmado','en_transito','con_retraso') AND c.estadoCarga <> 'cancelada'")
+    Double pesoReservado(@Param("id") Integer id);
     long countByTransportista_IdUsuarioAndEstadoLote(Integer idTransportista, String estadoLote);
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT l FROM Lote l WHERE l.idLote = :idLote")

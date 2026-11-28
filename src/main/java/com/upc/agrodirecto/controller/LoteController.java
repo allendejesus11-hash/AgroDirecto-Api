@@ -19,7 +19,18 @@ public class LoteController {
 	@Autowired
 	private AuthenticatedUserService authenticatedUserService;
 
-	@GetMapping("/{idLote}")
+	@Autowired private com.upc.agrodirecto.servicios.ConsolidacionServicios consolidacion;
+    @Autowired private com.upc.agrodirecto.repository.LoteRepositorio loteRepositorio;
+    @GetMapping("/admin")
+    public java.util.List<Lote> lotesAdmin(){return loteRepositorio.findAll();}
+    @PostMapping("/consolidar")
+    @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
+    public Lote consolidar(@Valid @RequestBody com.upc.agrodirecto.dto.ConsolidarLoteRequest req){return consolidacion.consolidar(req,authenticatedUserService.getCurrentUser());}
+    @PatchMapping("/{idLote}/confirmar-flete")
+    public Lote confirmarFlete(@PathVariable Integer idLote){return consolidacion.confirmar(idLote,authenticatedUserService.getCurrentUser());}
+    @PatchMapping("/{idLote}/iniciar")
+    public Lote iniciar(@PathVariable Integer idLote){return consolidacion.iniciar(idLote,authenticatedUserService.getCurrentUser());}
+    @GetMapping("/{idLote}")
 	public Lote detalle(@PathVariable Integer idLote) {
 		loteServicios.seguimiento(idLote, authenticatedUserService.getCurrentUser());
 		return loteServicios.detalleConCargas(idLote);

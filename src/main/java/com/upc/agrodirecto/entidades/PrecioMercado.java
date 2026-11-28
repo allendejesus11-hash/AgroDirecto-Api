@@ -25,4 +25,5 @@ public class PrecioMercado {
 
 	private Double precioPorKg;
 	private LocalDate fechaPrecio;
+    private String fuente;
 }

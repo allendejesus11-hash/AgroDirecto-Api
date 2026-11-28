@@ -81,7 +81,13 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/error"
                         ).permitAll()
-                        .requestMatchers("/api/v1/cultivos", "/api/v1/precios-mercado/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/lotes/admin").hasRole("ADMINISTRADOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/precios-mercado/importar", "/api/v1/lotes/consolidar").hasRole("ADMINISTRADOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/lotes/*/confirmar-flete").hasRole("PRODUCTOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/lotes/*/iniciar").hasRole("TRANSPORTISTA")
+                        .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/lotes/*/puntos-ruta").hasRole("ADMINISTRADOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/chats/solicitudes/lote/*").hasAnyRole("PRODUCTOR","TRANSPORTISTA","ADMINISTRADOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/cultivos", "/api/v1/precios-mercado/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/cargas").hasRole("PRODUCTOR")
                         .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/cargas/*/cancelar").hasRole("PRODUCTOR")
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/calificaciones").hasRole("PRODUCTOR")
@@ -91,7 +97,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/lotes/*/reportar-retraso").hasRole("TRANSPORTISTA")
                         .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/cargas/*/asignar-retorno").hasRole("TRANSPORTISTA")
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/chats/solicitudes").hasAnyRole("PRODUCTOR", "TRANSPORTISTA", "ADMINISTRADOR")
-                        .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/lotes/*/ubicacion", "/api/v1/lotes/*/puntos-ruta").hasRole("TRANSPORTISTA")
+                        .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/lotes/*/ubicacion").hasRole("TRANSPORTISTA")
                         .requestMatchers("/api/v1/usuarios", "/api/v1/usuarios/*/estado", "/api/v1/usuarios/*/administrador", "/api/v1/chats/solicitudes", "/api/v1/chats/solicitudes/*/estado", "/api/v1/transacciones/**", "/api/v1/reportes/transacciones/**", "/api/v1/cargas").hasRole("ADMINISTRADOR")
                         .requestMatchers("/api/v1/reportes/reputacion-transportista/**").authenticated()
                         .anyRequest().authenticated()
